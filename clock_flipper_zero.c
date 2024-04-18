@@ -4,6 +4,11 @@
 #include <gui/gui.h>
 #include <locale/locale.h>
 #include <datetime/datetime.h>
+#include <core/log.h>
+
+//#define BEATS_PER_DAY 1000
+//#define SECONDS_PER_BEAT (86400 / BEATS_PER_DAY)
+#define UTC_PLUS_ONE 28800 // PDTからUTCへ
 
 typedef enum {
     ClockEventTypeTick,
@@ -20,6 +25,8 @@ typedef struct {
     DateTime datetime;
     LocaleTimeFormat timeformat;
     LocaleDateFormat dateformat;
+    uint32_t beats;
+    double_t beats2;
 } ClockData;
 
 typedef struct {
@@ -42,10 +49,35 @@ static void clock_render_callback(Canvas* canvas, void* ctx) {
 
     ClockData* data = clock->data;
 
-    canvas_set_font(canvas, FontBigNumbers);
+    canvas_set_font(canvas, FontBigNumbers); //もしかして、FontBigNumbersは数字しか入ってない？
     locale_format_time(data->buffer, &data->datetime, data->timeformat, true);
     canvas_draw_str_aligned(
         canvas, 64, 28, AlignCenter, AlignCenter, furi_string_get_cstr(data->buffer));
+
+    // Swatch Internet Time
+    data->beats2 = ((((data->datetime.hour * 3600) + (data->datetime.minute * 60) +
+                      data->datetime.second + UTC_PLUS_ONE)) %
+                    86400) /
+                   86.4;
+    char str_beats[20];
+    snprintf(
+        str_beats,
+        sizeof(str_beats),
+        //"%03ld",
+        "%.2f",
+        data->beats2); //上でFontBigNumberを指定してるからなのか、数字しか表示できない。
+    canvas_draw_str_aligned(canvas, 64, 8, AlignCenter, AlignCenter, str_beats);
+    size_t s_beats_width = canvas_string_width(canvas, str_beats);
+    canvas_set_font(canvas, FontPrimary);
+    canvas_draw_str_aligned(
+        canvas,
+        64 - (s_beats_width / 2) - 14,
+        11,
+        AlignLeft,
+        AlignCenter,
+        "@"); //文字セットを変えてから、文字を別に表示させる・・・
+    canvas_draw_str_aligned(
+        canvas, 64 + (s_beats_width / 2) + 4, 11, AlignLeft, AlignCenter, ".Beat");
 
     // Special case to cover missing glyphs in FontBigNumbers
     if(data->timeformat == LocaleTimeFormat12h) {

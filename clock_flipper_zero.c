@@ -26,7 +26,7 @@ typedef struct {
     LocaleTimeFormat timeformat;
     LocaleDateFormat dateformat;
     uint32_t beats;
-    double_t beats2;
+    //double_t beats2;
 } ClockData;
 
 typedef struct {
@@ -50,52 +50,52 @@ static void clock_render_callback(Canvas* canvas, void* ctx) {
     ClockData* data = clock->data;
 
     canvas_set_font(canvas, FontBigNumbers); //もしかして、FontBigNumbersは数字しか入ってない？
-    locale_format_time(data->buffer, &data->datetime, data->timeformat, true);
-    canvas_draw_str_aligned(
-        canvas, 64, 28, AlignCenter, AlignCenter, furi_string_get_cstr(data->buffer));
+    //locale_format_time(data->buffer, &data->datetime, data->timeformat, true);
+    //canvas_draw_str_aligned(
+    //    canvas, 64, 28, AlignCenter, AlignCenter, furi_string_get_cstr(data->buffer));
 
     // Swatch Internet Time
-    data->beats2 = ((((data->datetime.hour * 3600) + (data->datetime.minute * 60) +
-                      data->datetime.second + UTC_PLUS_ONE)) %
-                    86400) /
-                   86.4;
+    data->beats = ((((data->datetime.hour * 3600) + (data->datetime.minute * 60) +
+                     data->datetime.second + UTC_PLUS_ONE)) %
+                   86400) /
+                  86.4;
     char str_beats[20];
     snprintf(
         str_beats,
         sizeof(str_beats),
-        //"%03ld",
-        "%.2f",
-        data->beats2); //上でFontBigNumberを指定してるからなのか、数字しか表示できない。
-    canvas_draw_str_aligned(canvas, 64, 8, AlignCenter, AlignCenter, str_beats);
+        "%03ld",
+        //"%03.2f",
+        data->beats); //上でFontBigNumberを指定してるからなのか、数字しか表示できない。
+    canvas_draw_str_aligned(canvas, 64, 28, AlignCenter, AlignCenter, str_beats);
     size_t s_beats_width = canvas_string_width(canvas, str_beats);
     canvas_set_font(canvas, FontPrimary);
     canvas_draw_str_aligned(
         canvas,
         64 - (s_beats_width / 2) - 14,
-        11,
+        30,
         AlignLeft,
         AlignCenter,
         "@"); //文字セットを変えてから、文字を別に表示させる・・・
     canvas_draw_str_aligned(
-        canvas, 64 + (s_beats_width / 2) + 4, 11, AlignLeft, AlignCenter, ".Beat");
+        canvas, 64 + (s_beats_width / 2) + 4, 31, AlignLeft, AlignCenter, ". beat");
 
     // Special case to cover missing glyphs in FontBigNumbers
-    if(data->timeformat == LocaleTimeFormat12h) {
-        size_t time_width = canvas_string_width(canvas, furi_string_get_cstr(data->buffer));
-        canvas_set_font(canvas, FontPrimary);
-        canvas_draw_str_aligned(
-            canvas,
-            64 + (time_width / 2) - 10,
-            31,
-            AlignLeft,
-            AlignCenter,
-            (data->datetime.hour > 11) ? "PM" : "AM");
-    }
+    //if(data->timeformat == LocaleTimeFormat12h) {
+    //    size_t time_width = canvas_string_width(canvas, furi_string_get_cstr(data->buffer));
+    //    canvas_set_font(canvas, FontPrimary);
+    //    canvas_draw_str_aligned(
+    //        canvas,
+    //        64 + (time_width / 2) - 10,
+    //        31,
+    //        AlignLeft,
+    //        AlignCenter,
+    //        (data->datetime.hour > 11) ? "PM" : "AM");
+    //}
 
-    canvas_set_font(canvas, FontSecondary);
-    locale_format_date(data->buffer, &data->datetime, data->dateformat, "/");
-    canvas_draw_str_aligned(
-        canvas, 64, 42, AlignCenter, AlignTop, furi_string_get_cstr(data->buffer));
+    //canvas_set_font(canvas, FontSecondary);
+    //locale_format_date(data->buffer, &data->datetime, data->dateformat, "/");
+    //canvas_draw_str_aligned(
+    //    canvas, 64, 42, AlignCenter, AlignTop, furi_string_get_cstr(data->buffer));
 
     furi_mutex_release(clock->mutex);
 }
